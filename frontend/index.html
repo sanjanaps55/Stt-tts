@@ -2,227 +2,169 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Speech to Text</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f5f5f5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 2rem;
-    }
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 2.5rem;
-      max-width: 540px;
-      width: 100%;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-    }
-    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.4rem; }
-    p.subtitle { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
-
-    .mic-btn {
-      width: 80px; height: 80px;
-      border-radius: 50%;
-      border: none;
-      background: #6c63ff;
-      color: white;
-      font-size: 2rem;
-      cursor: pointer;
-      display: block;
-      margin: 0 auto 1.5rem;
-      transition: background 0.2s, transform 0.1s;
-    }
-    .mic-btn:hover { background: #574fd6; }
-    .mic-btn.recording { background: #e74c3c; animation: pulse 1s infinite; }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.08); }
-    }
-
-    .status {
-      text-align: center;
-      font-size: 0.85rem;
-      color: #888;
-      margin-bottom: 1.5rem;
-      min-height: 20px;
-    }
-
-    .upload-section {
-      border-top: 1px solid #eee;
-      padding-top: 1.5rem;
-      margin-top: 0.5rem;
-    }
-    .upload-label {
-      font-size: 0.85rem;
-      color: #555;
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-    input[type="file"] {
-      font-size: 0.85rem;
-      width: 100%;
-      margin-bottom: 0.75rem;
-    }
-    .upload-btn {
-      background: #f0f0f0;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 0.5rem 1.2rem;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .upload-btn:hover { background: #e5e5e5; }
-
-    .result-box {
-      margin-top: 1.5rem;
-      background: #f8f8ff;
-      border: 1px solid #e0e0ff;
-      border-radius: 10px;
-      padding: 1rem 1.2rem;
-      display: none;
-    }
-    .result-box.visible { display: block; }
-    .result-label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #6c63ff;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.4rem;
-    }
-    .transcript-text {
-      font-size: 1rem;
-      line-height: 1.6;
-      color: #222;
-    }
-    .lang-badge {
-      display: inline-block;
-      margin-top: 0.5rem;
-      font-size: 0.75rem;
-      background: #ededff;
-      color: #534AB7;
-      padding: 2px 8px;
-      border-radius: 20px;
-    }
-    .copy-btn {
-      float: right;
-      font-size: 0.75rem;
-      background: none;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 2px 8px;
-      cursor: pointer;
-      color: #666;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speech-to-Text Developer Platform</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div class="card">
-  <h1>Speech to Text</h1>
-  <p class="subtitle">Press the mic and speak, or upload an audio file.</p>
 
-  <button class="mic-btn" id="micBtn" title="Click to record">🎤</button>
-  <p class="status" id="status">Click the mic to start recording</p>
-
-  <div class="upload-section">
-    <span class="upload-label">Or upload a file (.wav, .mp3, .m4a, .ogg)</span>
-    <input type="file" id="fileInput" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm" />
-    <button class="upload-btn" onclick="uploadFile()">Transcribe file</button>
-  </div>
-
-  <div class="result-box" id="resultBox">
-    <div class="result-label">
-      Transcript
-      <button class="copy-btn" onclick="copyText()">Copy</button>
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar">
+    <div class="brand">
+      ✨ STT
     </div>
-    <div class="transcript-text" id="transcriptText"></div>
-    <span class="lang-badge" id="langBadge"></span>
-  </div>
-</div>
+    <div class="nav-menu">
+      <a class="nav-link active" data-target="view-landing">Home</a>
+      <a class="nav-link" data-target="view-dashboard">Generate Keys</a>
+      <a class="nav-link" data-target="view-docs">Documentation</a>
+      <a class="nav-link" data-target="view-playground">Playground</a>
+    </div>
+  </nav>
 
-<script>
-  let mediaRecorder = null;
-  let audioChunks = [];
-  let isRecording = false;
+  <!-- Main Content Area -->
+  <main class="main-content">
 
-  const micBtn = document.getElementById('micBtn');
-  const status = document.getElementById('status');
-  const resultBox = document.getElementById('resultBox');
-  const transcriptText = document.getElementById('transcriptText');
-  const langBadge = document.getElementById('langBadge');
+    <!-- Landing View -->
+    <section id="view-landing" class="view-section active">
+      <h1>Welcome to STT</h1>
+      <p>The premium, production-grade Speech-to-Text SaaS API for developers.</p>
+      
+      <div class="glass-card">
+        <h2>Why STT?</h2>
+        <ul style="list-style-position: inside; color: var(--text-secondary); line-height: 1.8;">
+          <li>Asynchronous processing powered by Supabase and FastAPI</li>
+          <li>Supports over 50 languages with automatic detection</li>
+          <li>Accepts all major audio formats: .wav, .mp3, .m4a, .ogg, .flac</li>
+          <li>Rate limiting and concurrent task management built-in</li>
+        </ul>
+      </div>
+    </section>
 
-  micBtn.addEventListener('click', toggleRecording);
+    <!-- Dashboard View -->
+    <section id="view-dashboard" class="view-section">
+      <h1>Generate Keys</h1>
+      <p>Manage your API keys to access the transcription endpoints.</p>
 
-  async function toggleRecording() {
-    if (!isRecording) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
+      <div class="glass-card">
+        <h2>Authentication</h2>
+        <p style="font-size: 0.9rem;">For the MVP, please provide your Owner Username and the Admin Secret to fetch or generate your keys.</p>
+        
+        <div class="input-group">
+          <label class="input-label">Username (Owner)</label>
+          <input type="text" id="devOwner" placeholder="e.g. dev_jane" />
+        </div>
+        <div class="input-group">
+          <label class="input-label">Admin Secret</label>
+          <input type="password" id="devSecret" placeholder="Enter the backend admin secret" />
+        </div>
 
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = async () => {
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          stream.getTracks().forEach(t => t.stop());
-          await sendAudio(blob, 'recording.webm');
-        };
+        <button class="btn" id="fetchKeysBtn">Fetch My Keys</button>
+        <button class="btn btn-secondary" id="createKeyBtn">Generate New Key</button>
+      </div>
 
-        mediaRecorder.start();
-        isRecording = true;
-        micBtn.classList.add('recording');
-        micBtn.textContent = '⏹';
-        status.textContent = 'Recording... click to stop';
-      } catch (err) {
-        status.textContent = 'Microphone access denied. Please allow it in browser settings.';
-      }
-    } else {
-      mediaRecorder.stop();
-      isRecording = false;
-      micBtn.classList.remove('recording');
-      micBtn.textContent = '🎤';
-      status.textContent = 'Processing...';
-    }
+      <div class="glass-card">
+        <h2>Your Active API Keys</h2>
+        <div id="keysList">
+          <p>Please fetch your keys above.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Documentation View -->
+    <section id="view-docs" class="view-section">
+      <h1>API Documentation</h1>
+      <p>Integrate STT into your applications.</p>
+
+      <div class="glass-card">
+        <h2>1. Request Details</h2>
+        <p><strong>POST</strong> <code>/transcribe</code></p>
+        <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+        <p><strong>Required Parameters:</strong></p>
+        <ul style="list-style-position: inside; color: var(--text-secondary); line-height: 1.8;">
+          <li><code>file</code>: The audio file binary (mp3, wav, m4a, ogg, flac). Max size: 25MB.</li>
+        </ul>
+        <p><strong>Optional Parameters:</strong></p>
+        <ul style="list-style-position: inside; color: var(--text-secondary); line-height: 1.8;">
+          <li><code>language</code>: string (e.g., en, es). Helps AI accuracy.</li>
+          <li><code>webhook_url</code>: string (URL for async result delivery).</li>
+        </ul>
+      </div>
+
+      <div class="glass-card">
+        <h2>2. Response & Webhooks</h2>
+        <p><strong>Immediate Response (202 Accepted):</strong></p>
+        <pre><code>{
+  "task_id": "uuid-v4",
+  "status": "pending",
+  "message": "Audio is processing..."
+}</code></pre>
+        <p><strong>Webhook Payload (Sent when complete):</strong></p>
+        <pre><code>{
+  "event": "transcription.completed",
+  "task_id": "uuid-v4",
+  "data": {
+    "duration_seconds": 120.5,
+    "transcript": "Hello and welcome...",
+    "language": "en"
   }
+}</code></pre>
+      </div>
 
-  async function uploadFile() {
-    const file = document.getElementById('fileInput').files[0];
-    if (!file) { status.textContent = 'Please select a file first.'; return; }
-    status.textContent = 'Uploading and transcribing...';
-    await sendAudio(file, file.name);
-  }
+      <div class="glass-card">
+        <h2>3. Code Snippets</h2>
+        <p><strong>cURL:</strong></p>
+        <pre><code>curl -X POST "http://127.0.0.1:8000/transcribe" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@/path/to/audio.mp3" \
+  -F "language=en"</code></pre>
+        
+        <p><strong>Node.js (Fetch):</strong></p>
+        <pre><code>const formData = new FormData();
+formData.append('file', fs.createReadStream('audio.mp3'));
+formData.append('language', 'en');
 
-  async function sendAudio(blob, filename) {
-    const formData = new FormData();
-    formData.append('file', blob, filename);
+const response = await fetch('http://127.0.0.1:8000/transcribe', {
+  method: 'POST',
+  headers: { 'x-api-key': 'YOUR_API_KEY' },
+  body: formData
+});
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
+    </section>
 
-    try {
-      const res = await fetch('/transcribe', { method: 'POST', body: formData });
-      const data = await res.json();
+    <!-- Playground View -->
+    <section id="view-playground" class="view-section">
+      <h1>Playground</h1>
+      <p>Test the transcription API directly in the browser.</p>
+      
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2>Live Test</h2>
+        </div>
 
-      if (!res.ok) {
-        status.textContent = 'Error: ' + (data.detail || 'Something went wrong');
-        return;
-      }
+        <div class="playground-controls">
+          <button class="mic-btn" id="micBtn" title="Click to record">🎤</button>
+          <p id="pgStatus" style="color: var(--text-secondary); font-size: 0.9rem;">Click the mic to start recording</p>
+        </div>
 
-      transcriptText.textContent = data.transcript;
-      langBadge.textContent = 'Language: ' + data.language;
-      resultBox.classList.add('visible');
-      status.textContent = 'Done!';
-    } catch (err) {
-      status.textContent = 'Could not reach the server. Is it running?';
-    }
-  }
+        <hr style="border: 0; height: 1px; background: var(--border-color); margin: 2rem 0;" />
 
-  function copyText() {
-    navigator.clipboard.writeText(transcriptText.textContent);
-  }
-</script>
+        <div style="margin-bottom: 1rem;">
+          <label class="input-label">Or upload a file</label>
+          <input type="file" id="pgFileInput" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm" style="margin-bottom: 1rem;" />
+          <button class="btn btn-secondary" onclick="uploadPlaygroundFile()">Transcribe File</button>
+        </div>
+
+        <div class="result-box" id="pgResultBox">
+          <h3 style="margin-bottom: 0.5rem; color: var(--accent-primary);">Transcript</h3>
+          <div class="transcript-text" id="pgTranscript"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
