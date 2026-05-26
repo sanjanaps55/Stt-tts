@@ -8,161 +8,28 @@
 </head>
 <body>
 
-  <!-- Sidebar Navigation -->
-  <nav class="sidebar">
-    <div class="brand">
-      ✨ STT
-    </div>
-    <div class="nav-menu">
-      <a class="nav-link active" data-target="view-landing">Home</a>
-      <a class="nav-link" data-target="view-dashboard">Generate Keys</a>
-      <a class="nav-link" data-target="view-docs">Documentation</a>
-      <a class="nav-link" data-target="view-playground">Playground</a>
-    </div>
-  </nav>
-
   <!-- Main Content Area -->
-  <main class="main-content">
-
-    <!-- Landing View -->
-    <section id="view-landing" class="view-section active">
-      <h1>Welcome to STT</h1>
-      <p>The premium, production-grade Speech-to-Text SaaS API for developers.</p>
+  <main class="main-content" style="margin-left: 0; padding: 2rem; max-width: 800px; margin: 0 auto;">
+    <section id="view-playground" class="view-section active">
+      <h1 style="text-align: center;">Live Real-Time Transcription</h1>
+      <p style="text-align: center;">Test the Deepgram transcription API directly in the browser.</p>
       
-      <div class="glass-card">
-        <h2>Why STT?</h2>
-        <ul style="list-style-position: inside; color: var(--text-secondary); line-height: 1.8;">
-          <li>Asynchronous processing powered by Supabase and FastAPI</li>
-          <li>Supports over 50 languages with automatic detection</li>
-          <li>Accepts all major audio formats: .wav, .mp3, .m4a, .ogg, .flac</li>
-          <li>Rate limiting and concurrent task management built-in</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Dashboard View -->
-    <section id="view-dashboard" class="view-section">
-      <h1>Generate Keys</h1>
-      <p>Manage your API keys to access the transcription endpoints.</p>
-
-      <div class="glass-card">
-        <h2>Authentication</h2>
-        <p style="font-size: 0.9rem;">For the MVP, please provide your Owner Username and the Admin Secret to fetch or generate your keys.</p>
-        
-        <div class="input-group">
-          <label class="input-label">Username (Owner)</label>
-          <input type="text" id="devOwner" placeholder="e.g. dev_jane" />
-        </div>
-        <div class="input-group">
-          <label class="input-label">Admin Secret</label>
-          <input type="password" id="devSecret" placeholder="Enter the backend admin secret" />
-        </div>
-
-        <button class="btn" id="fetchKeysBtn">Fetch My Keys</button>
-        <button class="btn btn-secondary" id="createKeyBtn">Generate New Key</button>
-      </div>
-
-      <div class="glass-card">
-        <h2>Your Active API Keys</h2>
-        <div id="keysList">
-          <p>Please fetch your keys above.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Documentation View -->
-    <section id="view-docs" class="view-section">
-      <h1>API Documentation</h1>
-      <p>Integrate STT into your applications.</p>
-
-      <div class="glass-card">
-        <h2>1. Request Details</h2>
-        <p><strong>POST</strong> <code>/transcribe</code></p>
-        <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
-        <p><strong>Required Parameters:</strong></p>
-        <ul style="list-style-position: inside; color: var(--text-secondary); line-height: 1.8;">
-          <li><code>file</code>: The audio file binary (mp3, wav, m4a, ogg, flac). Max size: 25MB.</li>
-        </ul>
-        <p><strong>Optional Parameters:</strong></p>
-        <ul style="list-style-position: inside; color: var(--text-secondary); line-height: 1.8;">
-          <li><code>language</code>: string (e.g., en, es). Helps AI accuracy.</li>
-          <li><code>webhook_url</code>: string (URL for async result delivery).</li>
-        </ul>
-      </div>
-
-      <div class="glass-card">
-        <h2>2. Response & Webhooks</h2>
-        <p><strong>Immediate Response (202 Accepted):</strong></p>
-        <pre><code>{
-  "task_id": "uuid-v4",
-  "status": "pending",
-  "message": "Audio is processing..."
-}</code></pre>
-        <p><strong>Webhook Payload (Sent when complete):</strong></p>
-        <pre><code>{
-  "event": "transcription.completed",
-  "task_id": "uuid-v4",
-  "data": {
-    "duration_seconds": 120.5,
-    "transcript": "Hello and welcome...",
-    "language": "en"
-  }
-}</code></pre>
-      </div>
-
-      <div class="glass-card">
-        <h2>3. Code Snippets</h2>
-        <p><strong>cURL:</strong></p>
-        <pre><code>curl -X POST "http://127.0.0.1:8000/transcribe" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -F "file=@/path/to/audio.mp3" \
-  -F "language=en"</code></pre>
-        
-        <p><strong>Node.js (Fetch):</strong></p>
-        <pre><code>const formData = new FormData();
-formData.append('file', fs.createReadStream('audio.mp3'));
-formData.append('language', 'en');
-
-const response = await fetch('http://127.0.0.1:8000/transcribe', {
-  method: 'POST',
-  headers: { 'x-api-key': 'YOUR_API_KEY' },
-  body: formData
-});
-const data = await response.json();
-console.log(data);</code></pre>
-      </div>
-    </section>
-
-    <!-- Playground View -->
-    <section id="view-playground" class="view-section">
-      <h1>Playground</h1>
-      <p>Test the transcription API directly in the browser.</p>
-      
-      <div class="glass-card">
+      <div class="glass-card" style="margin-top: 2rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
           <h2>Live Test</h2>
         </div>
 
-        <div class="playground-controls">
-          <button class="mic-btn" id="micBtn" title="Click to record">🎤</button>
-          <p id="pgStatus" style="color: var(--text-secondary); font-size: 0.9rem;">Click the mic to start recording</p>
+        <div class="playground-controls" style="text-align: center; margin: 2rem 0;">
+          <button class="mic-btn" id="micBtn" title="Click to record" style="font-size: 3rem; padding: 1rem; border-radius: 50%;">🎤</button>
+          <p id="pgStatus" style="color: var(--text-secondary); font-size: 1.1rem; margin-top: 1rem;">Click the mic to start recording</p>
         </div>
 
-        <hr style="border: 0; height: 1px; background: var(--border-color); margin: 2rem 0;" />
-
-        <div style="margin-bottom: 1rem;">
-          <label class="input-label">Or upload a file</label>
-          <input type="file" id="pgFileInput" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm" style="margin-bottom: 1rem;" />
-          <button class="btn btn-secondary" onclick="uploadPlaygroundFile()">Transcribe File</button>
-        </div>
-
-        <div class="result-box" id="pgResultBox">
+        <div class="result-box visible" id="pgResultBox" style="margin-top: 2rem;">
           <h3 style="margin-bottom: 0.5rem; color: var(--accent-primary);">Transcript</h3>
-          <div class="transcript-text" id="pgTranscript"></div>
+          <div class="transcript-text" id="pgTranscript" style="min-height: 150px; font-size: 1.2rem; line-height: 1.6;"></div>
         </div>
       </div>
     </section>
-
   </main>
 
   <script src="app.js"></script>

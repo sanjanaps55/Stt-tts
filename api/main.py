@@ -1,14 +1,12 @@
 import os
 import logging
-import uuid
-from typing import Optional
-from fastapi import FastAPI, UploadFile, File, HTTPException, Header, BackgroundTasks
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
+import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from .auth import is_valid_api_key, get_key_owner, add_new_key, get_keys_for_owner
-from .database import get_supabase
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,115 +30,66 @@ app.add_middleware(
 
 
 
-ALLOWED_EXTENSIONS = [".wav", ".mp3", ".m4a", ".ogg", ".flac", ".webm"]
-MAX_FILE_SIZE = 25 * 1024 * 1024  # 25 MB
-
-
 
 @app.get("/health")
 def health():
     return {"status": "healthy"}
 
-@app.post("/upload")
-def upload(file: UploadFile = File(...)):   
-    return {"file_name": file.filename}
+import websockets as dg_websockets
+import json
 
-@app.post("/transcribe")
-def transcribe_endpoint(
-    file: UploadFile = File(...), 
-    x_api_key: Optional[str] = Header(default=None)
-):
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="Missing API Key")
-        
-    if not is_valid_api_key(x_api_key):
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-        
-    owner = get_key_owner(x_api_key)
-    log.info(f"Incoming async transcription request from user: {owner}")
+@app.websocket("/ws/transcribe")
+async def websocket_transcribe(websocket: WebSocket):
+    await websocket.accept()
     
-    filename = file.filename or "upload"
-    ext = os.path.splitext(filename)[1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported format '{ext}'. Allowed: {ALLOWED_EXTENSIONS}"
-        )
-        
-    audio_bytes = file.file.read()
-    if len(audio_bytes) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="File too large. Max 25MB.")
+    DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
+    if not DEEPGRAM_API_KEY:
+        await websocket.send_json({"error": "DEEPGRAM_API_KEY not found in .env"})
+        await websocket.close()
+        return
 
-    # Rate Limiting: Check concurrent tasks
-    supabase = get_supabase()
+    # Deepgram's nova-2 model automatically detects language if we don't specify it,
+    # or we can use language=multi depending on the model tier.
+    dg_url = "wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true"
     
-    # Query for tasks that are pending or processing
-    response = supabase.table("transcription_tasks").select("task_id").eq("api_key", x_api_key).in_("status", ["pending", "processing"]).execute()
-    active_tasks = len(response.data)
-        
-    if active_tasks >= 2:
-        raise HTTPException(
-            status_code=429, 
-            detail="Rate limit exceeded: You have too many concurrent tasks processing. Please wait for them to finish."
-        )
+    try:
+        async with dg_websockets.connect(
+            dg_url,
+            additional_headers={"Authorization": f"Token {DEEPGRAM_API_KEY}"}
+        ) as deepgram_ws:
+            
+            async def sender():
+                try:
+                    while True:
+                        data = await websocket.receive_bytes()
+                        await deepgram_ws.send(data)
+                except WebSocketDisconnect:
+                    pass
+                except Exception as e:
+                    log.error(f"Sender error: {e}")
 
-    # Generate a unique task ID
-    task_id = str(uuid.uuid4())
-    storage_filename = f"{task_id}{ext}"
-    
-    # Upload to Supabase Storage bucket 'audio-uploads'
-    supabase.storage.from_("audio-uploads").upload(
-        path=storage_filename, 
-        file=audio_bytes,
-        file_options={"content-type": f"audio/{ext.strip('.')}"}
-    )
+            async def receiver():
+                try:
+                    while True:
+                        result = await deepgram_ws.recv()
+                        res_json = json.loads(result)
+                        
+                        if "channel" in res_json:
+                            transcript = res_json["channel"]["alternatives"][0]["transcript"]
+                            if transcript:
+                                await websocket.send_json({"text": transcript})
+                except Exception as e:
+                    log.error(f"Receiver error: {e}")
+            
+            await asyncio.gather(sender(), receiver())
 
-    # Insert pending task into database
-    supabase.table("transcription_tasks").insert({
-        "task_id": task_id,
-        "api_key": x_api_key,
-        "status": "pending"
-    }).execute()
-
-    # Enqueue background task by simply leaving it as pending in the database.
-    # The worker will poll Supabase for 'pending' tasks.
-    log.info(f"Task {task_id} queued in database for processing.")
-
-    return {
-        "task_id": task_id,
-        "status": "pending",
-        "message": "Audio is processing in the background. Poll the /status endpoint with your task_id."
-    }
-
-@app.get("/status/{task_id}")
-def get_task_status(task_id: str, x_api_key: Optional[str] = Header(default=None)):
-    if not x_api_key or not is_valid_api_key(x_api_key):
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-
-    supabase = get_supabase()
-    response = supabase.table("transcription_tasks").select("status, transcript, language, error_message, duration_seconds").eq("task_id", task_id).eq("api_key", x_api_key).execute()
-        
-    if len(response.data) == 0:
-        raise HTTPException(status_code=404, detail="Task not found or you do not have permission to view it.")
-        
-    task_data = response.data[0]
-        
-    return task_data
-
-@app.post("/admin/create-key")
-def create_key(name: str, admin_secret: str = Header(...)):
-    # Simple protection: only you know this secret
-    if admin_secret != "my-admin-secret-change-this":
-        raise HTTPException(status_code=403, detail="Forbidden")
-    key = add_new_key(name)
-    return {"name": name, "api_key": key}
-
-@app.get("/developer/keys")
-def get_developer_keys(owner: str, admin_secret: str = Header(...)):
-    if admin_secret != "my-admin-secret-change-this":
-        raise HTTPException(status_code=403, detail="Forbidden")
-    keys = get_keys_for_owner(owner)
-    return {"owner": owner, "keys": keys}
+    except Exception as e:
+        log.error(f"Deepgram connection error: {e}")
+        try:
+            await websocket.send_json({"error": "Failed to connect to transcription provider."})
+            await websocket.close()
+        except:
+            pass
 
 # Serve the frontend (Must be at the bottom to prevent catching API routes)
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
