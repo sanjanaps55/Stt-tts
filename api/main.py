@@ -5,8 +5,11 @@ from fastapi.staticfiles import StaticFiles
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import websockets as dg_websockets
+import json
+from dotenv import load_dotenv
 
-
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,9 +37,6 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "healthy"}
-
-import websockets as dg_websockets
-import json
 
 @app.websocket("/ws/transcribe")
 async def websocket_transcribe(websocket: WebSocket):
