@@ -67,6 +67,8 @@ async def tts_stream(request: Request):
         from fastapi import HTTPException
         raise HTTPException(status_code=500, detail="TTS_API_URL not found in .env")
 
+    log.info(f"🚀 PROOF: Routing audio generation to external server -> {tts_url}")
+    
     async def proxy_stream():
         try:
             async with httpx.AsyncClient() as client:
