@@ -1,12 +1,14 @@
 import os
 import logging
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import websockets as dg_websockets
 import json
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -37,6 +39,44 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+@app.post("/tts/preload")
+async def tts_preload(request: Request):
+    payload = await request.json()
+    tts_url = os.getenv("TTS_API_URL")
+    if not tts_url:
+        return {"error": "TTS_API_URL not found in .env"}
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(f"{tts_url}/tts/preload", json=payload, timeout=10.0)
+            # Try parsing json if possible, else return text
+            try:
+                return resp.json()
+            except:
+                return {"message": resp.text}
+    except Exception as e:
+        log.error(f"TTS preload error: {e}")
+        return {"error": str(e)}
+
+@app.post("/tts/stream")
+async def tts_stream(request: Request):
+    payload = await request.json()
+    tts_url = os.getenv("TTS_API_URL")
+    
+    if not tts_url:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail="TTS_API_URL not found in .env")
+
+    async def proxy_stream():
+        try:
+            async with httpx.AsyncClient() as client:
+                async with client.stream("POST", f"{tts_url}/tts/stream", json=payload, timeout=30.0) as response:
+                    async for chunk in response.aiter_bytes():
+                        yield chunk
+        except Exception as e:
+            log.error(f"TTS stream error: {e}")
+
+    return StreamingResponse(proxy_stream(), media_type="application/octet-stream")
 
 @app.websocket("/ws/transcribe")
 async def websocket_transcribe(websocket: WebSocket):

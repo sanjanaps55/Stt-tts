@@ -1,37 +1,603 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Speech-to-Text Developer Platform</title>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Studio (TTS & STT)</title>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-tts: #00f0ff;
+            --accent-stt: #ff0055;
+            --text-main: #ffffff;
+            --text-muted: #8892b0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 240, 255, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 0, 85, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 80px;
+            background: rgba(15, 17, 21, 0.8);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 2rem;
+            gap: 1.5rem;
+            z-index: 10;
+        }
+
+        .nav-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            background: var(--glass-bg);
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active[data-target="tts-view"] {
+            color: var(--accent-tts);
+            border-color: rgba(0, 240, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        .nav-btn.active[data-target="stt-view"] {
+            color: var(--accent-stt);
+            border-color: rgba(255, 0, 85, 0.5);
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.2);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+            max-width: 700px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-title {
+            margin-top: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        /* TTS Specific */
+        .tts-title { color: var(--accent-tts); }
+        
+        textarea {
+            width: 100%;
+            height: 160px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+            margin-bottom: 1.5rem;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-tts);
+            box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.1);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00f0ff 0%, #0080ff 100%);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 240, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status-text {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            min-height: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* STT Specific */
+        .stt-title { color: var(--accent-stt); }
+
+        .mic-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 2rem 0;
+        }
+
+        .mic-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 0, 85, 0.1);
+            border: 2px solid var(--accent-stt);
+            color: var(--accent-stt);
+            font-size: 2.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .mic-btn:hover {
+            background: rgba(255, 0, 85, 0.2);
+            transform: scale(1.05);
+        }
+
+        .mic-btn.recording {
+            background: var(--accent-stt);
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0.6); }
+            70% { box-shadow: 0 0 0 25px rgba(255, 0, 85, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0); }
+        }
+
+        .transcript-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-height: 120px;
+            max-height: 250px;
+            overflow-y: auto;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .transcript-placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        audio {
+            display: none;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- Main Content Area -->
-  <main class="main-content" style="margin-left: 0; padding: 2rem; max-width: 800px; margin: 0 auto;">
-    <section id="view-playground" class="view-section active">
-      <h1 style="text-align: center;">Live Real-Time Transcription</h1>
-      <p style="text-align: center;">Test the Deepgram transcription API directly in the browser.</p>
-      
-      <div class="glass-card" style="margin-top: 2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <h2>Live Test</h2>
-        </div>
+    <!-- Configuration block acting as an env -->
+    <script>
+        const CONFIG = {
+            // Routing through our FastAPI gateway instead of calling external servers directly
+            TTS_PRELOAD_URL: "/tts/preload",
+            TTS_STREAM_URL: "/tts/stream",
+            // Dynamically gets the host so it works locally and in production automatically
+            STT_WS_URL: `ws://${window.location.host}/ws/transcribe`
+        };
+    </script>
 
-        <div class="playground-controls" style="text-align: center; margin: 2rem 0;">
-          <button class="mic-btn" id="micBtn" title="Click to record" style="font-size: 3rem; padding: 1rem; border-radius: 50%;">🎤</button>
-          <p id="pgStatus" style="color: var(--text-secondary); font-size: 1.1rem; margin-top: 1rem;">Click the mic to start recording</p>
-        </div>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <button class="nav-btn active" data-target="tts-view" title="Text to Speech">
+            🔊
+        </button>
+        <button class="nav-btn" data-target="stt-view" title="Speech to Text">
+            🎤
+        </button>
+    </nav>
 
-        <div class="result-box visible" id="pgResultBox" style="margin-top: 2rem;">
-          <h3 style="margin-bottom: 0.5rem; color: var(--accent-primary);">Transcript</h3>
-          <div class="transcript-text" id="pgTranscript" style="min-height: 150px; font-size: 1.2rem; line-height: 1.6;"></div>
-        </div>
-      </div>
-    </section>
-  </main>
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- Text to Speech View -->
+        <section id="tts-view" class="view-section active">
+            <div class="glass-card">
+                <h2 class="header-title tts-title">Text-to-Speech</h2>
+                <p class="header-subtitle">Zero-latency streaming with background pre-caching. Type below to silently cache audio, then generate instantly.</p>
+                
+                <textarea id="ttsInput" placeholder="Start typing sentences here... e.g. The quick brown fox jumps over the lazy dog."></textarea>
+                
+                <div class="btn-group">
+                    <button id="streamBtn" class="btn btn-primary">Generate Audio</button>
+                    <button id="pauseBtn" class="btn btn-secondary" disabled>Pause</button>
+                </div>
+                
+                <div class="status-text" id="ttsStatus">
+                    <span>Ready</span>
+                </div>
+                <audio id="audioPlayer" controls></audio>
+            </div>
+        </section>
 
-  <script src="app.js"></script>
+        <!-- Speech to Text View -->
+        <section id="stt-view" class="view-section">
+            <div class="glass-card">
+                <h2 class="header-title stt-title">Speech-to-Text</h2>
+                <p class="header-subtitle">Real-time live transcription powered by FastAPI & Deepgram WebSockets.</p>
+                
+                <div class="mic-container">
+                    <button id="micBtn" class="mic-btn" title="Click to record">🎤</button>
+                    <div class="status-text" id="sttStatus" style="justify-content: center; margin-top: 1rem;">
+                        Click to start recording
+                    </div>
+                </div>
+
+                <div class="transcript-box" id="sttTranscript">
+                    <span class="transcript-placeholder">Your transcript will appear here...</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Navigation Logic ---
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const views = document.querySelectorAll('.view-section');
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all
+                navBtns.forEach(b => b.classList.remove('active'));
+                views.forEach(v => v.classList.remove('active'));
+                
+                // Add active class to clicked
+                btn.classList.add('active');
+                const targetId = btn.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        // --- TTS Logic ---
+        const ttsInput = document.getElementById('ttsInput');
+        const streamBtn = document.getElementById('streamBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const ttsStatus = document.getElementById('ttsStatus');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        let preloadedSentences = new Set();
+        let currentAudioCtx = null;
+        let currentAbortController = null;
+        let isPaused = false;
+
+        ttsInput.addEventListener('input', (e) => {
+            const text = e.target.value;
+            
+            // Split by punctuation OR newlines
+            const chunks = text.split(/(?<=[.!?\n])\s+/).map(s => s.trim()).filter(s => s.length > 0);
+            
+            chunks.forEach(chunk => {
+                // ONLY preload definitive, complete sentences to avoid wasting compute
+                // and to ensure TTS pitch/intonation is synthesized correctly.
+                if (/[.!?\n]$/.test(chunk) && !preloadedSentences.has(chunk)) {
+                    preloadSentence(chunk);
+                }
+            });
+        });
+
+        async function preloadSentence(sentence) {
+            preloadedSentences.add(sentence);
+            ttsStatus.innerHTML = `<span style="color: var(--accent-tts)">⚡ Preloading:</span> "${sentence.substring(0,30)}..."`;
+            
+            try {
+                await fetch(CONFIG.TTS_PRELOAD_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: sentence, voice: "amy", speed: 1.0 })
+                });
+                setTimeout(() => {
+                    ttsStatus.innerText = "Ready";
+                }, 1500);
+            } catch (err) {
+                console.error("Preload failed", err);
+            }
+        }
+
+        streamBtn.addEventListener('click', async () => {
+            const text = ttsInput.value.trim();
+            if (!text) return;
+
+            if (currentAbortController) currentAbortController.abort();
+            currentAbortController = new AbortController();
+
+            // FIX 1: Create AudioContext synchronously inside the click handler to satisfy browser autoplay policies!
+            if (currentAudioCtx) {
+                currentAudioCtx.close();
+            }
+            currentAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (currentAudioCtx.state === 'suspended') {
+                currentAudioCtx.resume();
+            }
+
+            streamBtn.disabled = true;
+            pauseBtn.disabled = false;
+            pauseBtn.innerText = "Pause";
+            isPaused = false;
+            streamBtn.innerText = "Streaming...";
+            ttsStatus.innerHTML = `<span style="color: var(--accent-tts)">Connecting to stream...</span>`;
+
+            const startTime = Date.now();
+            let firstChunkReceived = false;
+            let wavHeaderSkipped = false;
+            
+            try {
+                const response = await fetch(CONFIG.TTS_STREAM_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: text, voice: "amy", speed: 1.0 }),
+                    signal: currentAbortController.signal
+                });
+
+                if (!response.ok) throw new Error("Stream failed");
+
+                const reader = response.body.getReader();
+                const sampleRate = 22050; 
+                let nextPlayTime = currentAudioCtx.currentTime + 0.1;
+                let leftoverBytes = new Uint8Array(0);
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    let chunk = new Uint8Array(leftoverBytes.length + value.length);
+                    chunk.set(leftoverBytes);
+                    chunk.set(value, leftoverBytes.length);
+
+                    // FIX 2: Skip the 44-byte WAV header (RIFF) on the first chunk to remove the static pop!
+                    if (!wavHeaderSkipped) {
+                        if (chunk.length >= 44 && chunk[0] === 82 && chunk[1] === 73 && chunk[2] === 70 && chunk[3] === 70) {
+                            chunk = chunk.slice(44);
+                        }
+                        wavHeaderSkipped = true;
+                    }
+
+                    if (chunk.length % 2 !== 0) {
+                        leftoverBytes = chunk.slice(-1);
+                        chunk = chunk.slice(0, -1);
+                    } else {
+                        leftoverBytes = new Uint8Array(0);
+                    }
+
+                    if (chunk.length === 0) continue;
+
+                    if (!firstChunkReceived) {
+                        const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+                        ttsStatus.innerHTML = `<span style="color: #00ffaa">⚡ Playing! Latency: ${timeTaken}s</span>`;
+                        firstChunkReceived = true;
+                    }
+
+                    const int16Array = new Int16Array(chunk.buffer, chunk.byteOffset, chunk.byteLength / 2);
+                    const float32Array = new Float32Array(int16Array.length);
+                    for (let i = 0; i < int16Array.length; i++) {
+                        float32Array[i] = int16Array[i] / 32768.0;
+                    }
+
+                    const audioBuffer = currentAudioCtx.createBuffer(1, float32Array.length, sampleRate);
+                    audioBuffer.getChannelData(0).set(float32Array);
+
+                    const source = currentAudioCtx.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(currentAudioCtx.destination);
+                    source.start(nextPlayTime);
+
+                    nextPlayTime += audioBuffer.duration;
+                }
+
+                ttsStatus.innerText = "Stream completed.";
+
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    ttsStatus.innerHTML = `<span style="color: #ff3333">Error: ${err.message}</span>`;
+                }
+            } finally {
+                streamBtn.disabled = false;
+                streamBtn.innerText = "Generate Audio";
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            if (!currentAudioCtx) return;
+            if (isPaused) {
+                currentAudioCtx.resume();
+                pauseBtn.innerText = "Pause";
+                isPaused = false;
+            } else {
+                currentAudioCtx.suspend();
+                pauseBtn.innerText = "Resume";
+                isPaused = true;
+            }
+        });
+
+        // --- STT Logic ---
+        let mediaRecorder = null;
+        let socket = null;
+        let isRecording = false;
+
+        const micBtn = document.getElementById('micBtn');
+        const sttStatus = document.getElementById('sttStatus');
+        const sttTranscript = document.getElementById('sttTranscript');
+
+        micBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    socket = new WebSocket(CONFIG.STT_WS_URL);
+                    
+                    socket.onopen = () => {
+                        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                        mediaRecorder.ondataavailable = e => {
+                            if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                                socket.send(e.data);
+                            }
+                        };
+                        mediaRecorder.start(250);
+                        
+                        isRecording = true;
+                        micBtn.classList.add('recording');
+                        micBtn.textContent = '⏹';
+                        sttStatus.innerHTML = `<span style="color: var(--accent-stt)">Listening...</span>`;
+                        sttTranscript.innerHTML = ''; // Clear placeholder
+                    };
+
+                    socket.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        if (data.text) {
+                            sttTranscript.textContent += data.text + ' ';
+                            sttTranscript.scrollTop = sttTranscript.scrollHeight;
+                        } else if (data.error) {
+                            sttStatus.innerHTML = `<span style="color: #ff3333">Error: ${data.error}</span>`;
+                        }
+                    };
+
+                    socket.onerror = (error) => {
+                        console.error("WebSocket Error:", error);
+                        sttStatus.innerHTML = `<span style="color: #ff3333">WebSocket connection error. Check CONFIG.</span>`;
+                    };
+
+                    socket.onclose = () => {
+                        if (isRecording) stopRecording(stream);
+                    };
+
+                } catch (err) {
+                    console.error(err);
+                    sttStatus.innerHTML = `<span style="color: #ff3333">Microphone access denied or error connecting.</span>`;
+                }
+            } else {
+                stopRecording();
+            }
+        });
+
+        function stopRecording(stream = null) {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+            } else if (mediaRecorder && mediaRecorder.stream) {
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            }
+            
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
+            }
+            
+            isRecording = false;
+            micBtn.classList.remove('recording');
+            micBtn.textContent = '🎤';
+            sttStatus.innerText = 'Stopped. Click to record again.';
+            
+            if(sttTranscript.innerHTML.trim() === '') {
+                sttTranscript.innerHTML = '<span class="transcript-placeholder">Your transcript will appear here...</span>';
+            }
+        }
+    </script>
 </body>
 </html>
