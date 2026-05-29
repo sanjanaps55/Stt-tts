@@ -279,7 +279,8 @@
             TTS_PRELOAD_URL: "/tts/preload",
             TTS_STREAM_URL: "/tts/stream",
             // Dynamically gets the host so it works locally and in production automatically
-            STT_WS_URL: `ws://${window.location.host}/ws/transcribe`
+            // Uses wss:// for HTTPS (production) and ws:// for HTTP (local development)
+            STT_WS_URL: `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/transcribe`
         };
     </script>
 
